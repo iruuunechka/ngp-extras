@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project name="NGP" basedir=".">
+    <!-- Directories -->
+
+    <property name="lib.dir" location="lib"/>
+    <property name="build.dir" location="build"/>
+    <property name="deploy.dir" location="deploy"/>
+
+    <!-- Paths to libraries -->
+
+    <path id="annotations.lib">
+        <pathelement location="${lib.dir}/annotations.jar"/>
+    </path>
+    <path id="junit.lib">
+        <pathelement location="${lib.dir}/junit-4.10.jar"/>
+    </path>
+    <path id="gson.lib">
+        <pathelement location="${lib.dir}/gson-2.2.jar"/>
+    </path>
+    <path id="jfreechart.lib">
+        <pathelement location="${lib.dir}/jcommon-1.0.14.jar"/>
+        <pathelement location="${lib.dir}/jfreechart-1.0.11.jar"/>
+    </path>
+    <path id="uncommons-math.lib">
+        <pathelement location="${lib.dir}/uncommons-maths-1.2.2.jar"/>
+    </path>
+    <path id="watchmaker.lib">
+        <pathelement location="${lib.dir}/watchmaker-framework-0.7.1.jar"/>
+    </path>
+    <path id="scala-library.lib">
+        <pathelement location="${lib.dir}/scala-reflect.jar"/>
+        <pathelement location="${lib.dir}/scala-library.jar"/>
+    </path>
+    <path id="scala-compiler.lib">
+        <pathelement location="${lib.dir}/scala-compiler.jar"/>
+    </path>
+    <path id="apache-commons-math.lib">
+        <pathelement location="${lib.dir}/commons-math3-3.4.1.jar"/>
+    </path>
+
+    <!-- Module dependencies -->
+
+    <property name="core.sources" location="Core/src"/>
+    <property name="core.build" location="${build.dir}/core"/>
+    <path id="core.deps">
+        <path refid="annotations.lib"/>
+        <path refid="scala-library.lib"/>
+    </path>
+
+    <property name="core-tests.sources" location="Core/tests"/>
+    <property name="core-tests.build" location="${build.dir}/core-tests"/>
+    <path id="core-tests.deps">
+        <path refid="core.deps"/>
+        <path refid="junit.lib"/>
+        <pathelement location="${core.build}"/>
+    </path>
+
+    <property name="research.sources" location="Research/src"/>
+    <property name="research.build" location="${build.dir}/research"/>
+    <path id="research.deps">
+        <path refid="core.deps"/>
+        <path refid="jfreechart.lib"/>
+        <path refid="uncommons-math.lib"/>
+        <path refid="gson.lib"/>
+        <path refid="watchmaker.lib"/>
+        <path refid="apache-commons-math.lib"/>
+        <pathelement location="${core.build}"/>
+    </path>
+
+    <property name="research-tests.sources" location="Research/tests"/>
+    <property name="research-tests.build" location="${build.dir}/research-tests"/>
+    <path id="research-tests.deps">
+        <path refid="research.deps"/>
+        <path refid="junit.lib"/>
+        <pathelement location="${research.build}"/>
+    </path>
+
+    <!-- Build targets -->
+
+    <target name="init">
+        <tstamp>
+            <format property="DSTAMP" pattern="yyyy-MM-dd" locale="US"/>
+        </tstamp>
+
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${deploy.dir}"/>
+
+        <taskdef resource="scala/tools/ant/antlib.xml">
+            <classpath>
+                <path refid="scala-library.lib"/>
+                <path refid="scala-compiler.lib"/>
+            </classpath>
+        </taskdef>
+    </target>
+
+    <target name="clean">
+        <delete dir="${build.dir}"/>
+        <delete dir="${deploy.dir}"/>
+    </target>
+
+    <target name="compile-core" depends="init">
+        <mkdir dir="${core.build}"/>
+        <scalac
+            srcdir="${core.sources}" 
+            destdir="${core.build}" 
+            encoding="utf-8" 
+            addparams="-feature -deprecation on -unchecked"
+            fork="true"
+        >
+            <classpath>
+                <path refid="core.deps"/>
+                <pathelement location="${core.build}"/>
+            </classpath> 
+        </scalac>
+        <javac 
+            srcdir="${core.sources}" 
+            destdir="${core.build}" 
+            encoding="utf-8" 
+            fork="true"
+            includeantruntime="false"
+        >
+            <compilerarg value="-Xlint:unchecked"/>
+            <classpath refid="core.deps"/>
+        </javac>
+        <jar destfile="${deploy.dir}/ngp-core.jar" basedir="${core.build}"/>
+    </target>
+
+    <target name="compile-core-tests" depends="init, compile-core">
+        <mkdir dir="${core-tests.build}"/>
+        <scalac
+            srcdir="${core-tests.sources}" 
+            destdir="${core-tests.build}" 
+            encoding="utf-8" 
+            addparams="-feature -deprecation on -unchecked"
+            fork="true"
+        >
+            <classpath>
+                <path refid="core-tests.deps"/>
+                <pathelement location="${core-tests.build}"/>
+            </classpath> 
+        </scalac>
+        <javac 
+            srcdir="${core-tests.sources}" 
+            destdir="${core-tests.build}" 
+            encoding="utf-8" 
+            fork="true"
+            includeantruntime="false"
+        >
+            <classpath refid="core-tests.deps"/>
+        </javac>
+        <jar destfile="${deploy.dir}/ngp-core-tests.jar" basedir="${core-tests.build}"/>
+    </target>
+
+    <target name="compile-research" depends="init, compile-core">
+        <mkdir dir="${research.build}"/>
+        <scalac
+            srcdir="${research.sources}" 
+            destdir="${research.build}" 
+            encoding="utf-8" 
+            addparams="-feature -deprecation on -unchecked"
+            fork="true"
+        >
+            <classpath>
+                <path refid="research.deps"/>
+                <pathelement location="${research.build}"/>
+            </classpath> 
+        </scalac>
+        <javac 
+            srcdir="${research.sources}" 
+            destdir="${research.build}" 
+            encoding="utf-8" 
+            fork="true"
+            includeantruntime="false"
+        >
+            <compilerarg value="-Xlint:unchecked"/>
+            <classpath refid="research.deps"/>
+        </javac>
+        <jar destfile="${deploy.dir}/ngp-research.jar" basedir="${research.build}"/>
+    </target>
+
+    <target name="copy-research-tests-resources">
+        <mkdir dir="${research-tests.build}"/>
+        <copy file="${research-tests.sources}/ru/ifmo/ctd/ngp/demo/proteins/sample.zip" todir="${research-tests.build}/ru/ifmo/ctd/ngp/demo/proteins"/>
+    </target>
+
+    <target name="compile-research-tests" depends="init, compile-research, copy-research-tests-resources">
+        <mkdir dir="${research-tests.build}"/>
+        <scalac
+            srcdir="${research-tests.sources}" 
+            destdir="${research-tests.build}" 
+            encoding="utf-8" 
+            addparams="-feature -deprecation on -unchecked"
+            fork="true"
+        >
+            <classpath>
+                <path refid="research-tests.deps"/>
+                <pathelement location="${research-tests.build}"/>
+            </classpath> 
+        </scalac>
+        <javac 
+            srcdir="${research-tests.sources}" 
+            destdir="${research-tests.build}" 
+            encoding="utf-8" 
+            fork="true"
+            includeantruntime="false"
+        >
+            <classpath refid="research-tests.deps"/>
+        </javac>
+        <jar destfile="${deploy.dir}/ngp-research-tests.jar" basedir="${research-tests.build}"/>
+    </target>
+
+    <!-- Test targets -->
+
+    <target name="test-core" depends="compile-core-tests">
+        <junit 
+            printsummary="yes"
+            includeantruntime="yes"
+            haltonfailure="yes"
+            haltonerror="yes"
+            fork="yes"
+            forkmode="perBatch"
+        >
+            <classpath>
+                <path refid="core-tests.deps"/>
+                <pathelement location="${core-tests.build}"/>
+            </classpath>
+            <batchtest>
+                <fileset dir="${core-tests.build}">
+                    <include name="**/*Test*.class"/>
+                    <exclude name="**/*Performance*.class"/>
+                    <exclude name="**/*$$*.class"/>
+                    <exclude name="**/*Base.class"/>
+                </fileset>
+            </batchtest>
+        </junit>
+    </target>
+
+    <target name="test-research" depends="compile-research-tests">
+        <junit 
+            printsummary="yes"
+            includeantruntime="yes"
+            haltonfailure="yes"
+            haltonerror="yes"
+            fork="yes"
+            forkmode="perBatch"
+        >
+            <classpath>
+                <path refid="research-tests.deps"/>
+                <pathelement location="${research-tests.build}"/>
+            </classpath>
+            <batchtest>
+                <fileset dir="${research-tests.build}">
+                    <include name="**/*Test*.class"/>
+                    <exclude name="**/*Performance*.class"/>
+                    <exclude name="**/*$$*.class"/>
+                    <exclude name="**/*Base.class"/>
+                </fileset>
+            </batchtest>
+        </junit>
+    </target>
+
+    <!-- Run targets -->
+    
+    <target name="leading-ones" depends="compile-research">
+        <java
+            classname="ru.ifmo.ctd.ngp.theory.leadingones.onemax.Main"
+            fork="true"
+        >
+            <classpath>
+                <path        refid="research.deps"/>
+                <pathelement location="${research.build}"/>
+            </classpath>
+        </java>
+    </target>
+
+    <!-- Meta-targets -->
+
+    <target name="compile" depends="init, compile-core, compile-research"/>
+    <target name="compile-tests" depends="init, compile-core-tests, compile-research-tests"/>
+    <target name="test" depends="init, test-core, test-research"/>
+</project>
